@@ -77,29 +77,69 @@ with tf.variable_scope('cnn', initializer=tf.initializers.ones()):
                                   kernel_size=1, # filter size
                                   strides=1,     # ?? reduces size of result?
                                   activation=None,
-                                  data_format='channels_last')
+                                  padding='valid',
+                                  use_bias=True,
+                                  data_format='channels_last') # batch, length, channels
 
 f = tf.Variable(tf.constant(
     [   # all batches
         [    #FirstRow                                   #LastRow
-            [0., 0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],       # timestep 1: 12(num_input) inputs
-            [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],       # timestep 2
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],       # timestep 3
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],       # timestep 4
-            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.]        # timestep 5
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 1
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 2
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 3
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 4
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 5
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 6
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 7
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 8
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 9
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 10
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 11
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]        # channel 12
         ]
     ]
 ), dtype=tf.float32)
 
+'''
+f2 = tf.Variable(tf.constant(
+    [   # all batches
+        [    #FirstRow                                   #LastRow
+            [0., 0., 0., 1., 1., 1., 1., 1., 1., 1., 1., 0.],       # channel 1
+            [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],       # channel 2
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],       # channel 3
+            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],       # channel 4
+            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 5
+            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 6
+            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 7
+            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 8
+            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 9
+            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 10
+            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 11
+            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.]        # channel 12
+        ]
+    ]
+), dtype=tf.float32)
+'''
+
 print('X_batchmajor', X_batchmajor.shape)
-print('f', f.shape)
+#NHWC
+print('...batch:', X_batchmajor.shape[0])
+print('...in_width:', X_batchmajor.shape[1])
+print('...in_channels:', X_batchmajor.shape[2])
+
+print('filter', f.shape)
+#NHWC
+print('...filter_width:', f.shape[0])
+print('...in_channels:', f.shape[1])
+print('...out_channels:', f.shape[2])
 
 raw_cnn_1d_out = tf.nn.conv1d(X_batchmajor,
                               filters=f,
                               stride=1,
-                              padding='SAME',
+                              padding='VALID',
                               use_cudnn_on_gpu=True,
-                              data_format='NCHW') # num_samples, channels, height, width
+                              data_format='NHWC') # num_samples, height/width, channels
+                              #data_format='NCHW') # num_samples, channels, height/width
 
 #x = tf.unstack(X, timesteps, 1)
 #outputs, states = rnn.static_rnn(lstm_cell, x, dtype=tf.float32)
@@ -117,6 +157,9 @@ with tf.Session() as sess:
     for var, val in zip(tvars, tvars_vals):
         print(var.name, val)  # Prints the name of the variable alongside its value.
 
+    # in CNN, depth is called channels
+    #         timesteps is called width/height (2D), or length (1D)
+    
     # desired shape:
     # original shape (2, 5, 12)  [batch, time, depth]
     # time-major (5, 2, 12)      [time, batch, depth]
@@ -130,11 +173,11 @@ with tf.Session() as sess:
                 [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.]        # timestep 5
             ], # ...
             [   # batch 2
-                [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.],       # timestep 1: 12(num_input) inputs
-                [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.],       # timestep 2
-                [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.],       # timestep 3
-                [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.],       # timestep 4
-                [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.]        # timestep 5
+                [2., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.],       # timestep 1: 12(num_input) inputs
+                [2., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.],       # timestep 2
+                [2., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.],       # timestep 3
+                [2., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.],       # timestep 4
+                [2., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.]        # timestep 5
             ], # ...
         ]
     )
@@ -157,12 +200,12 @@ with tf.Session() as sess:
     assert constval_timemajor.shape[2] == num_input
 
     # time-major
-    print('TF outputs2', sess.run(outputs2, feed_dict={X_batchmajor: constval}))
-    print('TF states2', sess.run(states2, feed_dict={X_batchmajor: constval}))
-    print('TF outputs', sess.run(outputs, feed_dict={X_timemajor: constval_timemajor}))
-    print('TF states', sess.run(states, feed_dict={X_timemajor: constval_timemajor}))
-    print('CUDNN outputs', sess.run(cudnn_outputs, feed_dict={X_timemajor: constval_timemajor}))
-    print('CUDNN states', sess.run(cudnn_states, feed_dict={X_timemajor: constval_timemajor}))
+    #print('TF outputs2', sess.run(outputs2, feed_dict={X_batchmajor: constval}))
+    #print('TF states2', sess.run(states2, feed_dict={X_batchmajor: constval}))
+    #print('TF outputs', sess.run(outputs, feed_dict={X_timemajor: constval_timemajor}))
+    #print('TF states', sess.run(states, feed_dict={X_timemajor: constval_timemajor}))
+    #print('CUDNN outputs', sess.run(cudnn_outputs, feed_dict={X_timemajor: constval_timemajor}))
+    #print('CUDNN states', sess.run(cudnn_states, feed_dict={X_timemajor: constval_timemajor}))
     print('CNN outputs', sess.run(cnn_1d_out, feed_dict={X_batchmajor: constval}))
     print('Raw CNN outputs', sess.run(raw_cnn_1d_out, feed_dict={X_batchmajor: constval}))
 
