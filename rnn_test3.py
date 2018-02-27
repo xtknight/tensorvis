@@ -24,6 +24,28 @@ X_timemajor = tf.placeholder("float", [timesteps, None, num_input])
 
 tf.set_random_seed(0)
 
+f7t_raw = [   # all batches
+        [    #FirstRow                                   #LastRow
+            [1., 1., 1., 1., 0., 1., 1.],       # channel 1
+            [1., 1., 1., 1., 0., 1., 1.],       # channel 2
+            [1., 1., 1., 1., 0., 1., 1.],       # channel 3
+            [1., 1., 1., 1., 0., 1., 1.],       # channel 4
+            [1., 1., 1., 1., 0., 1., 1.],       # channel 5
+            [1., 1., 1., 0., 0., 1., 1.],       # channel 6
+            [1., 1., 1., 0., 0., 1., 1.],       # channel 7
+            [1., 1., 1., 1., 0., 1., 1.],       # channel 8
+            [1., 1., 1., 1., 0., 1., 1.],       # channel 9
+            [1., 1., 1., 1., 0., 1., 1.],       # channel 10
+            [1., 1., 1., 1., 0., 1., 1.],       # channel 11
+            [1., 1., 1., 1., 0., 1., 1.]        # channel 12
+        ]
+    ]
+
+# filters=7(trained)
+# this would be the filter that would get trained
+f7t = tf.Variable(tf.constant(f7t_raw), dtype=tf.float32, name="7filters_trained")
+
+
 with tf.variable_scope('rnn', initializer=tf.initializers.ones()):
     lstm_cell = rnn.BasicLSTMCell(num_units=num_hidden,
                                 forget_bias=0.0, # 1.0?
@@ -70,18 +92,31 @@ with tf.variable_scope('rnn', initializer=tf.initializers.ones()):
         training=True
     )
 
-# CNN is performing addition over time series
-with tf.variable_scope('cnn', initializer=tf.initializers.ones()):
-    cnn_1d_out = tf.layers.conv1d(X_batchmajor,
-                                  filters=1,     # seems to just expand result
-                                  kernel_size=1, # filter size
-                                  strides=1,     # ?? reduces size of result?
-                                  activation=None,
-                                  padding='valid',
-                                  use_bias=True,
-                                  data_format='channels_last') # batch, length, channels
-
+'''
+# filters=7(all ones)
+# this would be the filter that would get trained
 f = tf.Variable(tf.constant(
+    [   # all batches
+        [    #FirstRow                                   #LastRow
+            [1., 1., 1., 1., 1., 1., 1.],       # channel 1
+            [1., 1., 1., 1., 1., 1., 1.],       # channel 2
+            [1., 1., 1., 1., 1., 1., 1.],       # channel 3
+            [1., 1., 1., 1., 1., 1., 1.],       # channel 4
+            [1., 1., 1., 1., 1., 1., 1.],       # channel 5
+            [1., 1., 1., 1., 1., 1., 1.],       # channel 6
+            [1., 1., 1., 1., 1., 1., 1.],       # channel 7
+            [1., 1., 1., 1., 1., 1., 1.],       # channel 8
+            [1., 1., 1., 1., 1., 1., 1.],       # channel 9
+            [1., 1., 1., 1., 1., 1., 1.],       # channel 10
+            [1., 1., 1., 1., 1., 1., 1.],       # channel 11
+            [1., 1., 1., 1., 1., 1., 1.]        # channel 12
+        ]
+    ]
+), dtype=tf.float32, name="7filters_all_ones")
+
+# filters=12
+# this would be the filter that would get trained
+f12 = tf.Variable(tf.constant(
     [   # all batches
         [    #FirstRow                                   #LastRow
             [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 1
@@ -98,27 +133,27 @@ f = tf.Variable(tf.constant(
             [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]        # channel 12
         ]
     ]
-), dtype=tf.float32)
+), dtype=tf.float32, name="12filters_all_ones")
 
-'''
-f2 = tf.Variable(tf.constant(
+# filters=1
+f1 = tf.Variable(tf.constant(
     [   # all batches
-        [    #FirstRow                                   #LastRow
-            [0., 0., 0., 1., 1., 1., 1., 1., 1., 1., 1., 0.],       # channel 1
-            [0., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],       # channel 2
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],       # channel 3
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0.],       # channel 4
-            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 5
-            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 6
-            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 7
-            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 8
-            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 9
-            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 10
-            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.],       # channel 11
-            [1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 0.]        # channel 12
+        [   #Row0
+            [1.],       # channel 1
+            [1.],       # channel 2
+            [1.],       # channel 3
+            [1.],       # channel 4
+            [1.],       # channel 5
+            [1.],       # channel 6
+            [1.],       # channel 7
+            [1.],       # channel 8
+            [1.],       # channel 9
+            [1.],       # channel 10
+            [1.],       # channel 11
+            [1.]        # channel 12
         ]
     ]
-), dtype=tf.float32)
+), dtype=tf.float32, name="1filter_all_ones")
 '''
 
 print('X_batchmajor', X_batchmajor.shape)
@@ -127,19 +162,66 @@ print('...batch:', X_batchmajor.shape[0])
 print('...in_width:', X_batchmajor.shape[1])
 print('...in_channels:', X_batchmajor.shape[2])
 
-print('filter', f.shape)
+print('filter', f7t.shape)
 #NHWC
-print('...filter_width:', f.shape[0])
-print('...in_channels:', f.shape[1])
-print('...out_channels:', f.shape[2])
+print('...filter_width:', f7t.shape[0])
+print('...in_channels:', f7t.shape[1])
+print('...out_channels:', f7t.shape[2])
+
+#from tensorflow.python.keras.initializers import Initializer
+from tensorflow.python.ops.init_ops import Initializer, _assert_float_dtype
+from tensorflow.python.ops import random_ops
+from tensorflow.python.framework import dtypes
+class CustomKernelInitializer(Initializer):
+    def __init__(self, dtype=dtypes.float32):
+        self.dtype = _assert_float_dtype(dtypes.as_dtype(dtype))
+
+    def __call__(self, shape, dtype=None, partition_info=None):
+        if dtype is None:
+            dtype = self.dtype
+        #normal = random_ops.random_normal(shape, self.mean, self.stddev,
+        #    dtype, seed=self.seed)
+        # do what you want with normal here
+        #return normal
+        return f7t
+
+    def get_config(self):
+        return {"dtype": self.dtype.name}
 
 raw_cnn_1d_out = tf.nn.conv1d(X_batchmajor,
-                              filters=f,
+                              filters=f7t,
                               stride=1,
                               padding='VALID',
                               use_cudnn_on_gpu=True,
                               data_format='NHWC') # num_samples, height/width, channels
                               #data_format='NCHW') # num_samples, channels, height/width
+
+# CNN is performing addition over time series
+with tf.variable_scope('cnn', initializer=tf.initializers.zeros()):
+    cnn_1d_inst = tf.layers.Conv1D(filters=7,    # seems to just expand result
+                                  kernel_size=1, # filter size
+                                  strides=1,     # ?? reduces size of result?
+                                  activation=None,
+                                  padding='valid',
+                                  use_bias=True,
+                                  name='conv1d',
+                                  #kernel_initializer=CustomKernelInitializer,
+                                  kernel_initializer=tf.constant_initializer(f7t_raw),
+                                  data_format='channels_last') # batch, length, channels
+
+'''
+    cnn_1d_out = tf.layers.conv1d(X_batchmajor,
+                                  filters=7,    # seems to just expand result
+                                  kernel_size=1, # filter size
+                                  strides=1,     # ?? reduces size of result?
+                                  activation=None,
+                                  padding='valid',
+                                  use_bias=True,
+                                  name='conv1d',
+                                  data_format='channels_last') # batch, length, channels
+'''
+
+cnn_1d_out = cnn_1d_inst.apply(X_batchmajor)
 
 #x = tf.unstack(X, timesteps, 1)
 #outputs, states = rnn.static_rnn(lstm_cell, x, dtype=tf.float32)
@@ -173,11 +255,11 @@ with tf.Session() as sess:
                 [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.]        # timestep 5
             ], # ...
             [   # batch 2
-                [2., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.],       # timestep 1: 12(num_input) inputs
-                [2., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.],       # timestep 2
-                [2., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.],       # timestep 3
-                [2., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.],       # timestep 4
-                [2., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.]        # timestep 5
+                [1., 1., 1., 1., 0., 1., 1., 1., 1., 1., 1., 1.],       # timestep 1: 12(num_input) inputs
+                [1., 1., 1., 1., 1., 0.25, 1., 1., 1., 1., 1., 1.],       # timestep 2
+                [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # timestep 3
+                [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # timestep 4
+                [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]        # timestep 5
             ], # ...
         ]
     )
@@ -206,6 +288,7 @@ with tf.Session() as sess:
     #print('TF states', sess.run(states, feed_dict={X_timemajor: constval_timemajor}))
     #print('CUDNN outputs', sess.run(cudnn_outputs, feed_dict={X_timemajor: constval_timemajor}))
     #print('CUDNN states', sess.run(cudnn_states, feed_dict={X_timemajor: constval_timemajor}))
+
     print('CNN outputs', sess.run(cnn_1d_out, feed_dict={X_batchmajor: constval}))
     print('Raw CNN outputs', sess.run(raw_cnn_1d_out, feed_dict={X_batchmajor: constval}))
 
