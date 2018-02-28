@@ -11,14 +11,18 @@ timesteps = 5
 
 num_hidden = 8
 num_input = 12
-num_rows = 4
+num_rows = 4 # width
+num_cols = 3 # height
 assert num_input % num_rows == 0, 'input must be divisible by row num'
+assert num_input % num_cols == 0, 'input must be divisible by col num'
+assert num_rows*num_cols == num_input, 'dimensions must match'
 
 num_classes = 1
 num_batches = 2
 
 # tf Graph input
 X_batchmajor = tf.placeholder("float", [None, timesteps, num_input])
+X_batchmajor_2d = tf.placeholder("float", [None, timesteps, num_cols, num_rows])
 X_timemajor = tf.placeholder("float", [timesteps, None, num_input])
 #Y = tf.placeholder("float", [None, num_classes])
 
@@ -44,6 +48,33 @@ f7t_raw = [   # all batches
 # filters=7(trained)
 # this would be the filter that would get trained
 f7t = tf.Variable(tf.constant(f7t_raw), dtype=tf.float32, name="7filters_trained")
+
+
+
+f3x4t_raw = [   # all batches
+        [    #FirstRow                                   #LastRow
+            [
+                [1., 1., 1., 1.],       # channel 1
+                [1., 1., 1., 1.],       # channel 2
+                [1., 1., 1., 1.],       # channel 3
+                [1., 1., 1., 1.],       # channel 4
+            ],
+            [
+                [1., 1., 1., 1.],       # channel 5
+                [1., 1., 1., 0.],       # channel 6
+                [1., 1., 1., 0.],       # channel 7
+                [1., 1., 1., 1.],       # channel 8
+            ],
+            [
+                [1., 1., 1., 1.],       # channel 9
+                [1., 1., 1., 1.],       # channel 10
+                [1., 1., 1., 1.],       # channel 11
+                [1., 1., 1., 1.]        # channel 12
+            ]
+        ]
+    ]
+
+f3x4t = tf.Variable(tf.constant(f3x4t_raw), dtype=tf.float32, name="3x4filters_trained")
 
 
 with tf.variable_scope('rnn', initializer=tf.initializers.ones()):
@@ -92,70 +123,6 @@ with tf.variable_scope('rnn', initializer=tf.initializers.ones()):
         training=True
     )
 
-'''
-# filters=7(all ones)
-# this would be the filter that would get trained
-f = tf.Variable(tf.constant(
-    [   # all batches
-        [    #FirstRow                                   #LastRow
-            [1., 1., 1., 1., 1., 1., 1.],       # channel 1
-            [1., 1., 1., 1., 1., 1., 1.],       # channel 2
-            [1., 1., 1., 1., 1., 1., 1.],       # channel 3
-            [1., 1., 1., 1., 1., 1., 1.],       # channel 4
-            [1., 1., 1., 1., 1., 1., 1.],       # channel 5
-            [1., 1., 1., 1., 1., 1., 1.],       # channel 6
-            [1., 1., 1., 1., 1., 1., 1.],       # channel 7
-            [1., 1., 1., 1., 1., 1., 1.],       # channel 8
-            [1., 1., 1., 1., 1., 1., 1.],       # channel 9
-            [1., 1., 1., 1., 1., 1., 1.],       # channel 10
-            [1., 1., 1., 1., 1., 1., 1.],       # channel 11
-            [1., 1., 1., 1., 1., 1., 1.]        # channel 12
-        ]
-    ]
-), dtype=tf.float32, name="7filters_all_ones")
-
-# filters=12
-# this would be the filter that would get trained
-f12 = tf.Variable(tf.constant(
-    [   # all batches
-        [    #FirstRow                                   #LastRow
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 1
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 2
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 3
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 4
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 5
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 6
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 7
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 8
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 9
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 10
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.],       # channel 11
-            [1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.]        # channel 12
-        ]
-    ]
-), dtype=tf.float32, name="12filters_all_ones")
-
-# filters=1
-f1 = tf.Variable(tf.constant(
-    [   # all batches
-        [   #Row0
-            [1.],       # channel 1
-            [1.],       # channel 2
-            [1.],       # channel 3
-            [1.],       # channel 4
-            [1.],       # channel 5
-            [1.],       # channel 6
-            [1.],       # channel 7
-            [1.],       # channel 8
-            [1.],       # channel 9
-            [1.],       # channel 10
-            [1.],       # channel 11
-            [1.]        # channel 12
-        ]
-    ]
-), dtype=tf.float32, name="1filter_all_ones")
-'''
-
 print('X_batchmajor', X_batchmajor.shape)
 #NHWC
 print('...batch:', X_batchmajor.shape[0])
@@ -196,9 +163,17 @@ raw_cnn_1d_out = tf.nn.conv1d(X_batchmajor,
                               data_format='NHWC') # num_samples, height/width, channels
                               #data_format='NCHW') # num_samples, channels, height/width
 
+raw_cnn_2d_out = tf.nn.conv2d(X_batchmajor_2d,
+                              filter=f3x4t,
+                              strides=(1, 1, 1, 1),
+                              padding='VALID',
+                              use_cudnn_on_gpu=True,
+                              data_format='NHWC') # num_samples, height/width, channels\
+
+
 # CNN is performing addition over time series
 with tf.variable_scope('cnn', initializer=tf.initializers.zeros()):
-    cnn_1d_inst = tf.layers.Conv1D(filters=7,    # seems to just expand result
+    cnn_1d_inst = tf.layers.Conv1D(filters=f7t.shape[2],
                                   kernel_size=1, # filter size
                                   strides=1,     # ?? reduces size of result?
                                   activation=None,
@@ -264,12 +239,16 @@ with tf.Session() as sess:
         ]
     )
 
+    constval_3x4 = np.reshape(constval, [2, 5, 3, 4])
+
     assert constval.shape[0] == num_batches
     assert constval.shape[1] == timesteps
     assert constval.shape[2] == num_input
 
     print('original', constval)
     print('original shape', constval.shape)
+    print('3x4', constval_3x4.shape)
+    print('3x4 shape', constval_3x4.shape)
 
     #print(sess.run(m, feed_dict={x: [[2.]]}))
     #print(sess.run(outputs, feed_dict={X: constval}))
@@ -282,15 +261,18 @@ with tf.Session() as sess:
     assert constval_timemajor.shape[2] == num_input
 
     # time-major
-    #print('TF outputs2', sess.run(outputs2, feed_dict={X_batchmajor: constval}))
-    #print('TF states2', sess.run(states2, feed_dict={X_batchmajor: constval}))
-    #print('TF outputs', sess.run(outputs, feed_dict={X_timemajor: constval_timemajor}))
-    #print('TF states', sess.run(states, feed_dict={X_timemajor: constval_timemajor}))
-    #print('CUDNN outputs', sess.run(cudnn_outputs, feed_dict={X_timemajor: constval_timemajor}))
-    #print('CUDNN states', sess.run(cudnn_states, feed_dict={X_timemajor: constval_timemajor}))
+    print('TF outputs2', sess.run(outputs2, feed_dict={X_batchmajor: constval}))
+    print('TF states2', sess.run(states2, feed_dict={X_batchmajor: constval}))
+    print('TF outputs', sess.run(outputs, feed_dict={X_timemajor: constval_timemajor}))
+    print('TF states', sess.run(states, feed_dict={X_timemajor: constval_timemajor}))
+    print('CUDNN outputs', sess.run(cudnn_outputs, feed_dict={X_timemajor: constval_timemajor}))
+    print('CUDNN states', sess.run(cudnn_states, feed_dict={X_timemajor: constval_timemajor}))
 
-    print('CNN outputs', sess.run(cnn_1d_out, feed_dict={X_batchmajor: constval}))
-    print('Raw CNN outputs', sess.run(raw_cnn_1d_out, feed_dict={X_batchmajor: constval}))
+    print('CNN 1D outputs', sess.run(cnn_1d_out, feed_dict={X_batchmajor: constval}))
+    print('Raw CNN 1D outputs', sess.run(raw_cnn_1d_out, feed_dict={X_batchmajor: constval}))
+
+    #print('CNN 2D outputs', sess.run(cnn_2d_out, feed_dict={X_batchmajor: constval}))
+    print('Raw CNN 2D outputs', sess.run(raw_cnn_2d_out, feed_dict={X_batchmajor_2d: constval_3x4}))
 
     #print('After')
     #for var, val in zip(tvars, tvars_vals):
