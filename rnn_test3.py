@@ -129,11 +129,18 @@ print('...batch:', X_batchmajor.shape[0])
 print('...in_width:', X_batchmajor.shape[1])
 print('...in_channels:', X_batchmajor.shape[2])
 
-print('filter', f7t.shape)
+print('1d filter', f7t.shape)
 #NHWC
 print('...filter_width:', f7t.shape[0])
 print('...in_channels:', f7t.shape[1])
 print('...out_channels:', f7t.shape[2])
+
+print('2d filter', f3x4t.shape)
+#NHWC
+print('...filter_height:', f3x4t.shape[0])
+print('...filter_width:', f3x4t.shape[1])
+print('...in_channels:', f3x4t.shape[2])
+print('...out_channels:', f3x4t.shape[3])
 
 #from tensorflow.python.keras.initializers import Initializer
 from tensorflow.python.ops.init_ops import Initializer, _assert_float_dtype
@@ -184,22 +191,18 @@ with tf.variable_scope('cnn', initializer=tf.initializers.zeros()):
                                   kernel_initializer=tf.constant_initializer(f7t_raw),
                                   data_format='channels_last') # batch, length, channels
 
-'''
-    cnn_1d_out = tf.layers.conv1d(X_batchmajor,
-                                  filters=7,    # seems to just expand result
-                                  kernel_size=1, # filter size
-                                  strides=1,     # ?? reduces size of result?
+    cnn_2d_inst = tf.layers.Conv2D(filters=f3x4t.shape[3],
+                                  kernel_size=(1, f3x4t.shape[1]), # ??
+                                  strides=(1, 1),
                                   activation=None,
                                   padding='valid',
                                   use_bias=True,
-                                  name='conv1d',
-                                  data_format='channels_last') # batch, length, channels
-'''
+                                  name='conv2d',
+                                  kernel_initializer=tf.constant_initializer(f3x4t_raw),
+                                  data_format='channels_last') # batch, height, width, channels
 
 cnn_1d_out = cnn_1d_inst.apply(X_batchmajor)
-
-#x = tf.unstack(X, timesteps, 1)
-#outputs, states = rnn.static_rnn(lstm_cell, x, dtype=tf.float32)
+cnn_2d_out = cnn_2d_inst.apply(X_batchmajor_2d)
 
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
@@ -271,7 +274,7 @@ with tf.Session() as sess:
     print('CNN 1D outputs', sess.run(cnn_1d_out, feed_dict={X_batchmajor: constval}))
     print('Raw CNN 1D outputs', sess.run(raw_cnn_1d_out, feed_dict={X_batchmajor: constval}))
 
-    #print('CNN 2D outputs', sess.run(cnn_2d_out, feed_dict={X_batchmajor: constval}))
+    print('CNN 2D outputs', sess.run(cnn_2d_out, feed_dict={X_batchmajor_2d: constval_3x4}))
     print('Raw CNN 2D outputs', sess.run(raw_cnn_2d_out, feed_dict={X_batchmajor_2d: constval_3x4}))
 
     #print('After')
