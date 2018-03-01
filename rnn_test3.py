@@ -23,6 +23,9 @@ num_batches = 2
 # tf Graph input
 X_batchmajor = tf.placeholder("float", [None, timesteps, num_input])
 X_batchmajor_2d = tf.placeholder("float", [None, timesteps, num_cols, num_rows])
+
+assert num_rows % 2 == 0 # for 3d testing
+X_batchmajor_3d = tf.placeholder("float", [None, timesteps, num_cols, num_rows/2, num_rows/2])
 X_timemajor = tf.placeholder("float", [timesteps, None, num_input])
 #Y = tf.placeholder("float", [None, num_classes])
 
@@ -49,26 +52,24 @@ f7t_raw = [   # all batches
 # this would be the filter that would get trained
 f7t = tf.Variable(tf.constant(f7t_raw), dtype=tf.float32, name="7filters_trained")
 
-
-
 f3x4t_raw = [   # all batches
         [    #FirstRow                                   #LastRow
             [
-                [1., 1., 1., 1.],       # channel 1
-                [1., 1., 1., 1.],       # channel 2
+                [1., 1., 0., 1.],       # channel 1
+                [1., 0., 1., 1.],       # channel 2
                 [1., 1., 1., 1.],       # channel 3
-                [1., 1., 1., 1.],       # channel 4
+                [1., 0., 1., 1.],       # channel 4
             ],
             [
-                [1., 1., 1., 1.],       # channel 5
-                [1., 1., 1., 0.],       # channel 6
-                [1., 1., 1., 0.],       # channel 7
+                [1., 0., 1., 1.],       # channel 5
+                [0., 1., 1., 0.],       # channel 6
+                [0., 1., 1., 0.],       # channel 7
                 [1., 1., 1., 1.],       # channel 8
             ],
             [
-                [1., 1., 1., 1.],       # channel 9
+                [0., 1., 0., 1.],       # channel 9
                 [1., 1., 1., 1.],       # channel 10
-                [1., 1., 1., 1.],       # channel 11
+                [1., 0., 1., 1.],       # channel 11
                 [1., 1., 1., 1.]        # channel 12
             ]
         ]
@@ -76,6 +77,78 @@ f3x4t_raw = [   # all batches
 
 f3x4t = tf.Variable(tf.constant(f3x4t_raw), dtype=tf.float32, name="3x4filters_trained")
 
+f3x2x2t_raw = [   # all batches
+        [    #FirstRow                                   #LastRow
+            [
+                [
+                    [1., 1., 0., 1.],       # channel 1
+                    [1., 0., 1., 1.],       # channel 2
+                ],
+                [
+                    [1., 1., 1., 1.],       # channel 3
+                    [1., 0., 1., 1.],       # channel 4
+                ]
+            ],
+            [
+                [
+                    [1., 0., 1., 1.],       # channel 5
+                    [0., 1., 1., 0.],       # channel 6
+                ],
+                [
+                    [0., 1., 1., 0.],       # channel 7
+                    [1., 1., 1., 1.],       # channel 8
+                ]
+            ],
+            [
+                [
+                    [0., 1., 0., 1.],       # channel 9
+                    [1., 1., 1., 1.],       # channel 10
+                ],
+                [
+                    [1., 0., 1., 1.],       # channel 11
+                    [1., 1., 1., 1.]        # channel 12
+                ]
+            ]
+        ]
+    ]
+
+'''
+f3x2x2t_raw = [   # all batches
+        [    #FirstRow                                   #LastRow
+            [
+                [
+                    [1., 1.],       # channel 1  [ may have to delete inner portion a bit ]
+                    [0., 1.],       # channel 2
+                ],
+                [
+                    [1., 0.],       # channel 3
+                    [1., 1.],       # channel 4
+                ]
+            ],
+            [
+                [
+                    [1., 1.],       # channel 5  [ may have to delete inner portion a bit ]
+                    [1., 1.],       # channel 6
+                ],
+                [
+                    [1., 0.],       # channel 7
+                    [1., 1.],       # channel 8
+                ]
+            ],
+            [
+                [
+                    [1., 0.],       # channel 9  [ may have to delete inner portion a bit ]
+                    [1., 1.],       # channel 10
+                ],
+                [
+                    [0., 1.],       # channel 11
+                    [1., 0.],       # channel 12
+                ]
+            ]
+        ]
+    ]
+'''
+f3x2x2t = tf.Variable(tf.constant(f3x2x2t_raw), dtype=tf.float32, name="3x2x2filters_trained")
 
 with tf.variable_scope('rnn', initializer=tf.initializers.ones()):
     lstm_cell = rnn.BasicLSTMCell(num_units=num_hidden,
@@ -142,25 +215,13 @@ print('...filter_width:', f3x4t.shape[1])
 print('...in_channels:', f3x4t.shape[2])
 print('...out_channels:', f3x4t.shape[3])
 
-#from tensorflow.python.keras.initializers import Initializer
-from tensorflow.python.ops.init_ops import Initializer, _assert_float_dtype
-from tensorflow.python.ops import random_ops
-from tensorflow.python.framework import dtypes
-class CustomKernelInitializer(Initializer):
-    def __init__(self, dtype=dtypes.float32):
-        self.dtype = _assert_float_dtype(dtypes.as_dtype(dtype))
-
-    def __call__(self, shape, dtype=None, partition_info=None):
-        if dtype is None:
-            dtype = self.dtype
-        #normal = random_ops.random_normal(shape, self.mean, self.stddev,
-        #    dtype, seed=self.seed)
-        # do what you want with normal here
-        #return normal
-        return f7t
-
-    def get_config(self):
-        return {"dtype": self.dtype.name}
+print('3d filter', f3x2x2t.shape)
+#NDHWC
+print('...filter_depth:', f3x2x2t.shape[0])
+print('...filter_height:', f3x2x2t.shape[1])
+print('...filter_width:', f3x2x2t.shape[2])
+print('...in_channels:', f3x2x2t.shape[3])
+print('...out_channels:', f3x2x2t.shape[4])
 
 raw_cnn_1d_out = tf.nn.conv1d(X_batchmajor,
                               filters=f7t,
@@ -175,13 +236,19 @@ raw_cnn_2d_out = tf.nn.conv2d(X_batchmajor_2d,
                               strides=(1, 1, 1, 1),
                               padding='VALID',
                               use_cudnn_on_gpu=True,
-                              data_format='NHWC') # num_samples, height/width, channels\
+                              data_format='NHWC') # num_samples, height/width, channels
+
+raw_cnn_3d_out = tf.nn.conv3d(X_batchmajor_3d,
+                              filter=f3x2x2t,
+                              strides=(1, 1, 1, 1, 1),
+                              padding='VALID',
+                              data_format='NDHWC') # num_samples, depth, height/width, channels
 
 
 # CNN is performing addition over time series
 with tf.variable_scope('cnn', initializer=tf.initializers.zeros()):
-    cnn_1d_inst = tf.layers.Conv1D(filters=f7t.shape[2],
-                                  kernel_size=1, # filter size
+    cnn_1d_inst = tf.layers.Conv1D(filters=int(f7t.shape[2]),
+                                  kernel_size=int(f7t.shape[0]), # conv length
                                   strides=1,     # ?? reduces size of result?
                                   activation=None,
                                   padding='valid',
@@ -191,8 +258,8 @@ with tf.variable_scope('cnn', initializer=tf.initializers.zeros()):
                                   kernel_initializer=tf.constant_initializer(f7t_raw),
                                   data_format='channels_last') # batch, length, channels
 
-    cnn_2d_inst = tf.layers.Conv2D(filters=f3x4t.shape[3],
-                                  kernel_size=(1, f3x4t.shape[1]), # ??
+    cnn_2d_inst = tf.layers.Conv2D(filters=int(f3x4t.shape[3]), # out_channels
+                                  kernel_size=(int(f3x4t.shape[0]), int(f3x4t.shape[1])), # conv H, W
                                   strides=(1, 1),
                                   activation=None,
                                   padding='valid',
@@ -201,8 +268,19 @@ with tf.variable_scope('cnn', initializer=tf.initializers.zeros()):
                                   kernel_initializer=tf.constant_initializer(f3x4t_raw),
                                   data_format='channels_last') # batch, height, width, channels
 
+    cnn_3d_inst = tf.layers.Conv3D(filters=int(f3x2x2t.shape[4]), # out_channels
+                                  kernel_size=(int(f3x2x2t.shape[0]), int(f3x2x2t.shape[1]), int(f3x2x2t.shape[2])), # conv D, H, W
+                                  strides=(1, 1, 1),
+                                  activation=None,
+                                  padding='valid',
+                                  use_bias=True,
+                                  name='conv3d',
+                                  kernel_initializer=tf.constant_initializer(f3x2x2t_raw),
+                                  data_format='channels_last') # batch, height, width, channels
+
 cnn_1d_out = cnn_1d_inst.apply(X_batchmajor)
 cnn_2d_out = cnn_2d_inst.apply(X_batchmajor_2d)
+cnn_3d_out = cnn_3d_inst.apply(X_batchmajor_3d)
 
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
@@ -243,6 +321,7 @@ with tf.Session() as sess:
     )
 
     constval_3x4 = np.reshape(constval, [2, 5, 3, 4])
+    constval_3x2x2 = np.reshape(constval, [2, 5, 3, 2, 2])
 
     assert constval.shape[0] == num_batches
     assert constval.shape[1] == timesteps
@@ -252,6 +331,8 @@ with tf.Session() as sess:
     print('original shape', constval.shape)
     print('3x4', constval_3x4.shape)
     print('3x4 shape', constval_3x4.shape)
+    print('3x2x2', constval_3x2x2.shape)
+    print('3x2x2 shape', constval_3x2x2.shape)
 
     #print(sess.run(m, feed_dict={x: [[2.]]}))
     #print(sess.run(outputs, feed_dict={X: constval}))
@@ -276,6 +357,9 @@ with tf.Session() as sess:
 
     print('CNN 2D outputs', sess.run(cnn_2d_out, feed_dict={X_batchmajor_2d: constval_3x4}))
     print('Raw CNN 2D outputs', sess.run(raw_cnn_2d_out, feed_dict={X_batchmajor_2d: constval_3x4}))
+
+    print('CNN 3D outputs', sess.run(cnn_3d_out, feed_dict={X_batchmajor_3d: constval_3x2x2}))
+    print('Raw CNN 3D outputs', sess.run(raw_cnn_3d_out, feed_dict={X_batchmajor_3d: constval_3x2x2}))
 
     #print('After')
     #for var, val in zip(tvars, tvars_vals):
